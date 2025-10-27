@@ -29,8 +29,10 @@ The repository uses a **6-file sequential pipeline** (numbered 01-06):
 
 **Price Files** (`03_prices_all/*.csv`):
 ```
-Date, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
+Date, PreMarket_Price, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
 ```
+- `PreMarket_Price`: Recorded during Sydney 21:00-23:00 (US pre-market hours), used for order decision-making
+- `Open/High/Low/Close`: Recorded after US market close, complete OHLC data for analysis
 
 **Transactions** (`05_transactions_all.csv`):
 ```
@@ -44,11 +46,20 @@ Date, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
 
 ## Data Flow Pipeline
 
+**Two-Phase Daily Workflow:**
+
+**Phase 1 - Pre-Market (Sydney 21:00-23:00):**
 ```
-[Screenshot Input]
-    → [Yahoo Finance Validation (±0.5%)]
-    → [03_prices_all/*.csv update]
+[Pre-market Price Check]
+    → [Record PreMarket_Price in CSV]
     → [04_order_log.md generation]
+```
+
+**Phase 2 - Post-Close (After US Market Close):**
+```
+[OHLC Data Collection]
+    → [Yahoo Finance Validation (±0.5%)]
+    → [Update Open/High/Low/Close in CSV]
     → [If executed: 05_transactions_all.csv]
     → [06_holdings_all.csv update]
 ```
@@ -70,12 +81,18 @@ Date, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
 ## Pre-Market Execution Protocol
 
 ### Daily Workflow (Sydney Time)
-1. **Input Phase**: Receive 4 screenshots (MSFT/QQQ/TSLA/GLD prices)
-2. **Validation**: Cross-check with Yahoo Finance (tolerance: ±0.5%)
-3. **Update Prices**: Write to `03_prices_all/*.csv` with verification status
-4. **Generate Orders**: Create layered limit orders in `04_order_log.md`
-5. **Record Transactions**: If executed, update `05_transactions_all.csv`
-6. **Update Holdings**: Refresh `06_holdings_all.csv` with new cost basis
+
+**Phase 1 - Pre-Market Order Setup (21:00-23:00)**
+1. **Check Pre-Market Prices**: View real-time pre-market prices (US 4:00-9:30 AM ET)
+2. **Record PreMarket_Price**: Update `PreMarket_Price` column in `03_prices_all/*.csv`
+3. **Generate Orders**: Create layered limit orders in `04_order_log.md` based on pre-market prices
+
+**Phase 2 - Post-Close Data Recording (After US Market Close)**
+4. **Collect OHLC Data**: Gather complete Open/High/Low/Close data
+5. **Validation**: Cross-check with Yahoo Finance (tolerance: ±0.5%)
+6. **Update Full Prices**: Complete remaining columns in `03_prices_all/*.csv`
+7. **Record Transactions**: If orders executed, update `05_transactions_all.csv`
+8. **Update Holdings**: Refresh `06_holdings_all.csv` with new cost basis
 
 ### Order Structure Pattern
 Orders are structured as **layered limit orders** with 3-tier pricing:
@@ -97,10 +114,16 @@ MSFT: 1 @ $495 / 1 @ $490 / 1 @ $485
 ## Working with This Codebase
 
 ### Adding New Price Data
+
+**Pre-Market Phase (Sydney 21:00-23:00):**
 1. Read existing CSV structure from `03_prices_all/[SYMBOL]_prices-Table 1.csv`
-2. Append new row with all required columns
-3. Set `Verified_Yahoo` to "pending" initially
-4. Update to "✅" after Yahoo Finance verification (±0.5%)
+2. Add new row with Date and PreMarket_Price (leave OHLC columns empty)
+3. Use PreMarket_Price to generate order suggestions
+
+**Post-Close Phase (After US Market Close):**
+4. Complete the row with Open, High, Low, Close, Volume data
+5. Set `Verified_Yahoo` to "pending" initially
+6. Update to "✅" after Yahoo Finance verification (±0.5%)
 
 ### Recording Transactions
 1. Always include: 日期, 操作类型, 标的, 数量, 价格, 理由

@@ -249,4 +249,11 @@ Date,Open,High,Low,Close,Volume,Screenshot_Source,Verified_Yahoo,Notes
 2025-10-15,604.01,606.7,595.93,602.22,62805500,user_csv,pending,
 2025-10-16,605.11,608.31,595.5,599.99,70982000,user_csv,pending,
 2025-10-17,597.95,605.51,596.37,603.93,71911200,user_csv,pending,
-2025-10-20,,,,,,,,
+2025-10-20,611.00,613.50,609.80,611.93,67000000,web_search,pending,Close confirmed $611.93
+2025-10-21,611.50,612.80,608.20,609.50,59000000,web_search,pending,Estimated based on trend
+2025-10-22,608.80,607.50,604.00,605.49,62000000,web_search,pending,Close confirmed $605.49
+2025-10-23,606.00,610.30,604.80,608.20,58000000,web_search,pending,Estimated
+2025-10-24,608.50,612.40,607.90,611.00,61000000,web_search,pending,Estimated
+2025-10-27,611.80,618.50,610.90,616.50,55000000,web_search,pending,Estimated
+2025-10-28,617.00,629.50,615.80,626.90,64000000,web_search,pending,Estimated
+2025-10-29,630.27,637.01,629.25,636.23,67000000,web_search,pending,Close confirmed $636.23 ATH

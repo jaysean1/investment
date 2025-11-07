@@ -29,8 +29,10 @@ The repository uses a **6-file sequential pipeline** (numbered 01-06):
 
 **Price Files** (`03_prices_all/*.csv`):
 ```
-Date, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
+Date, Open, High, Low, Close, Volume, Pre_Market_Price, Screenshot_Source, Verified_Yahoo, Notes
 ```
+
+**Key Update**: Added `Pre_Market_Price` column to support evening pre-market price input for next-day order planning.
 
 **Transactions** (`05_transactions_all.csv`):
 ```
@@ -45,9 +47,11 @@ Date, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
 ## Data Flow Pipeline
 
 ```
-[Screenshot Input]
-    → [Yahoo Finance Validation (±0.5%)]
-    → [03_prices_all/*.csv update]
+[Evening: User Provides Pre-Market Prices]
+    → [Record to Pre_Market_Price column]
+    → [Next Day: Run update_prices.py]
+    → [Yahoo Finance Auto-fetch & Validation (±0.5%)]
+    → [03_prices_all/*.csv update with OHLC + Pre_Market_Price]
     → [04_order_log.md generation]
     → [If executed: 05_transactions_all.csv]
     → [06_holdings_all.csv update]
@@ -70,12 +74,19 @@ Date, Open, High, Low, Close, Volume, Screenshot_Source, Verified_Yahoo, Notes
 ## Pre-Market Execution Protocol
 
 ### Daily Workflow (Sydney Time)
-1. **Input Phase**: Receive 4 screenshots (MSFT/QQQ/TSLA/GLD prices)
-2. **Validation**: Cross-check with Yahoo Finance (tolerance: ±0.5%)
-3. **Update Prices**: Write to `03_prices_all/*.csv` with verification status
-4. **Generate Orders**: Create layered limit orders in `04_order_log.md`
-5. **Record Transactions**: If executed, update `05_transactions_all.csv`
-6. **Update Holdings**: Refresh `06_holdings_all.csv` with new cost basis
+
+**Evening Routine (Before Market Opens):**
+1. **Pre-Market Input**: User provides 4 pre-market prices (MSFT/QQQ/TSLA/GLD)
+2. **Record Pre-Market**: Add to CSV files with `Pre_Market_Price` column, leave OHLC empty
+3. **Generate Orders**: Create preliminary layered limit orders in `04_order_log.md` based on pre-market prices
+
+**Next Day (After Market Closes):**
+4. **Auto-Update**: Run `python3 update_prices.py` to fetch actual market data
+5. **Validation**: Script auto-validates against Yahoo Finance (tolerance: ±0.5%)
+6. **Update Complete**: CSV files now have both pre-market and actual prices
+7. **Compare Results**: Review pre-market prediction vs actual close
+8. **Record Transactions**: If orders executed, update `05_transactions_all.csv`
+9. **Update Holdings**: Refresh `06_holdings_all.csv` with new cost basis
 
 ### Order Structure Pattern
 Orders are structured as **layered limit orders** with 3-tier pricing:
@@ -97,10 +108,30 @@ MSFT: 1 @ $495 / 1 @ $490 / 1 @ $485
 ## Working with This Codebase
 
 ### Adding New Price Data
-1. Read existing CSV structure from `03_prices_all/[SYMBOL]_prices-Table 1.csv`
-2. Append new row with all required columns
-3. Set `Verified_Yahoo` to "pending" initially
-4. Update to "✅" after Yahoo Finance verification (±0.5%)
+
+**Method 1: Pre-Market Price Input (Evening)**
+1. User provides pre-market prices for next trading day
+2. Create new row with `Pre_Market_Price` filled, OHLC columns empty
+3. Set `Screenshot_Source` to "user_premarket"
+4. Set `Verified_Yahoo` to "pending"
+5. Add note: "pre-market input, awaiting market close data"
+
+**Method 2: Automatic Market Data Update (Next Day)**
+1. Run `python3 update_prices.py`
+2. Script fetches data from Yahoo Finance for dates with empty OHLC
+3. Fills in Open, High, Low, Close, Volume columns
+4. Keeps existing `Pre_Market_Price` for comparison
+5. Sets `Screenshot_Source` to "yahoo_api"
+6. Auto-validates and sets `Verified_Yahoo` to "✅" if within ±0.5%
+
+**CSV Row Evolution Example:**
+```
+Evening:
+2025-11-07,,,,,500.0,user_premarket,pending,pre-market input
+
+Next Day After Update:
+2025-11-07,505.36,505.7,495.81,497.1,27048995,500.0,yahoo_api,✅,
+```
 
 ### Recording Transactions
 1. Always include: 日期, 操作类型, 标的, 数量, 价格, 理由

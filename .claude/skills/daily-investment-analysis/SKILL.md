@@ -9,32 +9,39 @@ description: This skill should be used for daily pre-market investment analysis 
 
 This skill automates the complete daily pre-market investment workflow for a 4-asset portfolio (MSFT, QQQ, TSLA, GLD). Execute this workflow when receiving daily price screenshots or when the user requests order generation, transaction recording, or holdings updates.
 
-**Core Workflow**: Screenshot Input → Yahoo Validation → Price Update → Order Generation → Transaction Recording → Holdings Refresh
+**Core Workflow**: Pre-Market Price Input (Evening) → Market Close Data Update (Next Day) → Yahoo Validation → Order Generation → Transaction Recording → Holdings Refresh
 
 ## When to Use This Skill
 
 Trigger this skill when:
+- User provides **pre-market prices** in the evening (for next trading day order planning)
 - User provides screenshot inputs for daily prices (any of MSFT/QQQ/TSLA/GLD)
 - User requests pre-market order suggestions
 - User reports executed transactions that need recording
 - User wants portfolio holdings recalculated
 - User asks for position limit validation
 
-**Timezone Context**: All operations occur in Sydney timezone during US pre-market hours.
+**Timezone Context**: All operations occur in Sydney timezone during US pre-market hours. User provides pre-market prices in the evening for next-day order planning.
 
 ## Workflow Decision Tree
 
 ```
 START
   ↓
-Has user provided price screenshots?
-  ├─ YES → Proceed to Phase 1: Data Input & Validation
-  └─ NO → Ask user for screenshot inputs
+Has user provided pre-market prices (evening)?
+  ├─ YES → Proceed to Phase 0: Pre-Market Price Recording
+  └─ NO → Skip to Phase 1
           ↓
-Phase 1: Data Input & Validation
-  ├─ Extract price data from screenshots (Open/High/Low/Close)
+Phase 0: Pre-Market Price Recording (EVENING - Sydney time)
+  ├─ User provides pre-market prices for next trading day
+  ├─ Record in Pre_Market_Price column with empty OHLC
+  └─ Generate preliminary order suggestions
+          ↓
+Phase 1: Market Close Data Update (NEXT DAY)
+  ├─ Fetch actual market data using update_prices.py
+  ├─ Update OHLC columns for rows with Pre_Market_Price
   ├─ Validate against Yahoo Finance (±0.5% tolerance)
-  └─ Update 03_prices_all/*.csv files
+  └─ Keep Pre_Market_Price for comparison
           ↓
 Phase 2: Order Generation
   ├─ Analyze recent price trends (detect market phase)
@@ -58,9 +65,118 @@ Phase 4: Holdings Update
 END (full workflow complete)
 ```
 
-## Phase 1: Data Input & Validation
+## Phase 0: Pre-Market Price Recording (NEW)
 
-### Step 1.1: Extract Price Data
+### Overview
+User provides pre-market prices every evening (Sydney time) for the next trading day. This enables early order planning before the actual market data is available.
+
+### Step 0.1: Receive Pre-Market Prices
+
+User provides pre-market prices in the format:
+```
+Pre-market prices for 2025-11-07:
+MSFT $500
+QQQ $620
+TSLA $450
+GLD $365
+```
+
+### Step 0.2: Add Pre-Market Price Rows
+
+**Important**: At this stage, we only record the pre-market price. OHLC data remains empty until actual market close.
+
+Run Python script to add pre-market placeholder:
+```python
+python3 << 'EOF'
+import pandas as pd
+from pathlib import Path
+
+DATA_DIR = Path('/Users/qiansui/Downloads/xinyihan/investment/structure/03_prices_all')
+
+premarket_data = {
+    'MSFT': 500.0,
+    'QQQ': 620.0,
+    'TSLA': 450.0,
+    'GLD': 365.0
+}
+
+date = '2025-11-07'
+
+for ticker, premarket_price in premarket_data.items():
+    csv_path = DATA_DIR / f'{ticker}_prices-Table 1.csv'
+    df = pd.read_csv(csv_path)
+
+    # Check if date already exists
+    if date in df['Date'].values:
+        print(f"⚠️  {ticker}: Date {date} already exists, skipping")
+        continue
+
+    # Add placeholder row with only pre-market price
+    new_row = {
+        'Date': date,
+        'Open': '',
+        'High': '',
+        'Low': '',
+        'Close': '',
+        'Volume': '',
+        'Pre_Market_Price': premarket_price,
+        'Screenshot_Source': 'user_premarket',
+        'Verified_Yahoo': 'pending',
+        'Notes': 'pre-market input, awaiting market close data'
+    }
+
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    df.to_csv(csv_path, index=False)
+    print(f"✅ {ticker}: Added pre-market price ${premarket_price}")
+
+EOF
+```
+
+### Step 0.3: Generate Preliminary Orders
+
+Based on pre-market prices, generate order suggestions for next trading day. This allows user to prepare orders in advance.
+
+**Next Step**: Wait for actual market close, then proceed to Phase 1 to fetch real OHLC data.
+
+## Phase 1: Market Close Data Update
+
+### Overview
+After market closes, fetch actual OHLC data and update the rows that have pre-market prices.
+
+### Step 1.1: Run Update Script
+
+Use the `update_prices.py` script to automatically fetch Yahoo Finance data:
+
+```bash
+python3 update_prices.py
+```
+
+This script will:
+- Find dates with empty OHLC but with Pre_Market_Price
+- Fetch actual market data from Yahoo Finance
+- Fill in Open, High, Low, Close, Volume
+- Keep the Pre_Market_Price for comparison
+- Mark as verified with ✅
+
+### Step 1.2: Validate Pre-Market vs Actual
+
+After update, compare pre-market predictions with actual close:
+
+```python
+# Check last row with pre-market price
+import pandas as pd
+df = pd.read_csv('03_prices_all/MSFT_prices-Table 1.csv')
+last_row = df.iloc[-1]
+
+if last_row['Pre_Market_Price']:
+    premarket = float(last_row['Pre_Market_Price'])
+    actual = float(last_row['Close'])
+    diff = actual - premarket
+    diff_pct = (diff / premarket) * 100
+    print(f"Pre-market: ${premarket:.2f}, Actual: ${actual:.2f}, Diff: {diff_pct:+.2f}%")
+```
+
+### Step 1.3: Extract Price Data (Historical Method - For Screenshots)
 
 User provides 4 screenshots containing daily prices for:
 - MSFT (Microsoft)
@@ -76,21 +192,45 @@ Extract the following data points from each screenshot:
 - Close price
 - Volume (if available)
 
-### Step 1.2: Validate Against Yahoo Finance
+**Note**: This method is now optional since `update_prices.py` automatically fetches data from Yahoo Finance.
 
-Use the validation script to cross-check prices:
+### Step 1.4: Updated CSV Format (With Pre_Market_Price Column)
 
-```bash
-python scripts/validate_yahoo_price.py MSFT 2025-10-20 513.58 Close
+**NEW CSV Structure**:
+```csv
+Date,Open,High,Low,Close,Volume,Pre_Market_Price,Screenshot_Source,Verified_Yahoo,Notes
+2025-11-06,505.36,505.7,495.81,497.1,27048995,,yahoo_api,✅,
+2025-11-07,,,,,500.0,user_premarket,pending,pre-market input
 ```
 
-**Validation Criteria**:
-- Tolerance: ±0.5% difference from Yahoo Finance
-- Status: `✅` (valid) or `⚠️` (warning) or `❌` (error)
+**Column Definitions**:
+- `Date`: Trading date (YYYY-MM-DD)
+- `Open`, `High`, `Low`, `Close`, `Volume`: Market data (from Yahoo Finance)
+- **`Pre_Market_Price`**: Evening pre-market price provided by user (NEW)
+- `Screenshot_Source`: Data source (yahoo_api, user_premarket, user_screenshot)
+- `Verified_Yahoo`: Validation status (✅, pending, ⚠️, ❌)
+- `Notes`: Additional information
 
-**Important**: If validation shows `⚠️` or `❌`, inform the user and ask whether to proceed with the data or request correction.
+### Data Flow Examples
 
-### Step 1.3: Update Price CSV Files
+**Example 1: Pre-Market to Market Close Flow**
+```
+Evening (Sydney time):
+Date,Open,High,Low,Close,Volume,Pre_Market_Price,Screenshot_Source,Verified_Yahoo,Notes
+2025-11-07,,,,,500.0,user_premarket,pending,pre-market input
+
+Next Day After Market Close:
+Date,Open,High,Low,Close,Volume,Pre_Market_Price,Screenshot_Source,Verified_Yahoo,Notes
+2025-11-07,505.36,505.7,495.81,497.1,27048995,500.0,yahoo_api,✅,
+```
+
+**Example 2: Direct Yahoo Finance Update (No Pre-Market)**
+```
+Date,Open,High,Low,Close,Volume,Pre_Market_Price,Screenshot_Source,Verified_Yahoo,Notes
+2025-11-08,500.5,502.3,498.1,501.2,25000000,,yahoo_api,✅,
+```
+
+### Update Price CSV Files
 
 Update the corresponding CSV file in `03_prices_all/`:
 - `MSFT_prices-Table 1.csv`
@@ -98,16 +238,10 @@ Update the corresponding CSV file in `03_prices_all/`:
 - `TSLA_prices-Table 1.csv`
 - `GLD_prices-Table 1.csv`
 
-**CSV Format**:
-```csv
-Date,Open,High,Low,Close,Volume,Screenshot_Source,Verified_Yahoo,Notes
-2025-10-20,509.04,515.48,507.31,513.58,19798500,user_screenshot,✅,
-```
-
 **Rules**:
 - Append new rows (do not modify existing data)
-- Set `Screenshot_Source` to "user_screenshot"
-- Set `Verified_Yahoo` to validation status emoji
+- If pre-market price provided: Set `Pre_Market_Price`, leave OHLC empty, mark as "pending"
+- If market data available: Fill OHLC, set `Screenshot_Source` to "yahoo_api", mark as ✅
 - Leave `Notes` empty unless there's an issue
 
 ## Phase 2: Order Generation

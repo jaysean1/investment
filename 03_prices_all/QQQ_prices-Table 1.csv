@@ -263,3 +263,4 @@ Date,Open,High,Low,Close,Volume,Pre_Market_Price,Screenshot_Source,Verified_Yaho
 2025-11-04,623.28,626.95,618.46,619.25,63830800,623.0,yahoo_api,✅,
 2025-11-05,618.49,626.6,617.21,623.28,48688500,617.0,yahoo_api,✅,
 2025-11-06,621.8,622.04,610.31,611.67,68564480,,yahoo_api,✅,
+2025-11-07,,,,,,612.0,user_premarket,pending,"pre-market input, awaiting market close data"

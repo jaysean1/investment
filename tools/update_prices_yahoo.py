@@ -19,7 +19,7 @@ SYMBOLS = {
 }
 
 # 需要更新到的日期（含）
-TARGET_DATES = ["2025-10-20", "2025-10-21"]
+TARGET_DATES = ["2025-11-07", "2025-11-08"]
 
 
 def fetch_daily_ohlcv(symbol: str) -> dict:

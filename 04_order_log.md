@@ -1,7 +1,26 @@
 # 🧾 04_order_log.md — 盘前挂单建议日志（倒序）
 
+## Pending Orders (Draft Only)
+> Capture pre-market drafts here and label each entry with the date plus the strategy pack you used. Move a row into the main log only after you say "confirm today's orders."
+> - Drafts are discussion material only, not execution records.
+> - When there is nothing pending, write "None."
+
+- None
+
 | Date | Symbol | Suggested Orders (USD) |
 |:--|:--|:--|
+
+| 2025-11-11 | **市场分析** | Pre-market: MSFT $505 (-0.20%), QQQ $621 (-0.36%), TSLA $442 (-0.73%), GLD $381 (+0.69%). 风险盘50.3%使用率. 盘前轻微回调，延续极端保守策略. MSFT继续守500以下等真实回调. QQQ坚守590区间，不参与620+高位. TSLA锁定成本价$428以下，拒绝追涨. GLD持仓已盈利5%+，仅在深度回调至365以下加仓 |
+| 2025-11-11 | MSFT（买入） | 1 @ 495 / 1 @ 490 / 1 @ 485 |
+| 2025-11-11 | QQQ（买入） | 1 @ 590 / 1 @ 585 / 1 @ 580 |
+| 2025-11-11 | TSLA（买入） | 1 @ 428 / 1 @ 424 / 1 @ 420 |
+| 2025-11-11 | GLD（买入） | 1 @ 365 / 1 @ 362 / 1 @ 358 |
+
+| 2025-11-10 | **市场分析** | Pre-market: MSFT $502 (+1.21%), QQQ $619 (+1.80%), TSLA $440 (+0.84%), GLD $375 (+1.75%). 风险盘50.7%使用率. 盘前虚高警惕，采取极端保守策略. MSFT维持500以下布局. QQQ大幅下调至590区间等待真实回调. TSLA锁定成本价$428及以下，只降成本不追高. GLD机会性持仓，仅在深度回调时加仓 |
+| 2025-11-10 | MSFT（买入） | 1 @ 495 / 1 @ 490 / 1 @ 485 |
+| 2025-11-10 | QQQ（买入） | 1 @ 590 / 1 @ 585 / 1 @ 580 |
+| 2025-11-10 | TSLA（买入） | 1 @ 428 / 1 @ 424 / 1 @ 420 |
+| 2025-11-10 | GLD（买入） | 1 @ 365 / 1 @ 362 / 1 @ 358 |
 
 | 2025-11-07 | **市场分析** | Pre-market: MSFT $496 (-0.22%), QQQ $612 (+0.05%), TSLA $450 (+0.92%), GLD $368 (+0.53%). 风险盘48.9%使用率. MSFT连续7日下跌(-8.2%)且盘前接近昨日挂单，微调下探给缓冲空间. QQQ/TSLA修正至成本价以下. GLD保持昨日策略 |
 | 2025-11-07 | MSFT（买入） | 1 @ 493 / 1 @ 488 / 1 @ 483 |

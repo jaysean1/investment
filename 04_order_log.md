@@ -5,7 +5,13 @@
 > - Drafts are discussion material only, not execution records.
 > - When there is nothing pending, write "None."
 
-- None
+| Date | Symbol | Suggested Orders (USD) |
+|:--|:--|:--|
+| 2025-11-12 | **市场分析** | Pre-market: MSFT $510 (+0.26%), QQQ $622 (+0.07%), TSLA $441 (+0.31%), GLD $379 (-0.23%). 风险盘50.2%使用率. 盘前小幅上涨延续强势，继续执行极端保守策略. MSFT坚守500以下，等待真实回调机会. QQQ维持590区间铁律，拒绝620+高位追涨. TSLA严格锁定成本价$428以下，只降成本不追高. GLD持仓盈利近5%，仅在深度回调至365以下才考虑加仓 |
+| 2025-11-12 | MSFT（买入） | 1 @ 495 / 1 @ 490 / 1 @ 485 |
+| 2025-11-12 | QQQ（买入） | 1 @ 590 / 1 @ 585 / 1 @ 580 |
+| 2025-11-12 | TSLA（买入） | 1 @ 428 / 1 @ 424 / 1 @ 420 |
+| 2025-11-12 | GLD（买入） | 1 @ 365 / 1 @ 362 / 1 @ 358 |
 
 | Date | Symbol | Suggested Orders (USD) |
 |:--|:--|:--|
